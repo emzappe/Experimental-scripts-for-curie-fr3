@@ -11,13 +11,15 @@ MORSE_CODE_DICT = {
     '7': '--...', '8': '---..', '9': '----.',
     ' ': ' ' 
 }
-usrp = uhd.usrp.MultiUSRP("type=b210")
+usrp = uhd.usrp.MultiUSRP("type=n210")
 freq1 = input("Enter Freqency 6-24Ghz ")
 freq2 = "1000000000"
+freq4 = "000000000"
 message = input("What would you like to say ")
 base_ur = "http://10.42.0.10:5111/high_lo?freq="
 base_url = "http://10.42.0.10:511/low_lo?freq="
-url = f"{base_ur}{freq1}"
+freq3 = f"{freq1}{freq4}"
+url = f"{base_ur}{freq3}"
 u1l = f"{base_url}{freq2}"
 def text_to_morse(message):
     morse = []
@@ -42,7 +44,6 @@ with urlib.request.urlopen(u1l) as response:
     ht3l = response.read().decode('utf-8')
     print(ht3l)
   def transmit_morse(morse_code, tx_rate, tx_freq, tx_gain, tx_time):
-    usrp = uhd.usrp.MultiUSRP("type=b210")
     usrp.set_tx_rate(1e6)
     usrp.set_tx_freq(1e9)
     usrp.set_tx_gain(-20)
