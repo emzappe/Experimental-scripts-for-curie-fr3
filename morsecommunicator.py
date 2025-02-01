@@ -1,7 +1,12 @@
 import time
 import sys
-import importurllib.request
+import urllib.request
 import uhd
+import numpy as np
+import uhd.usrp
+from uhd import types
+from uhd import usrp
+
 MORSE_CODE_DICT = {
     'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
     'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
@@ -9,43 +14,99 @@ MORSE_CODE_DICT = {
     'Y': '-.--', 'Z': '--..',
     '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....', '6': '-....',
     '7': '--...', '8': '---..', '9': '----.',
-    ' ': ' ' 
+    ' ': '///////////////'
 }
-usrp = uhd.usrp.MultiUSRP("type=n210")
-freq1 = input("Enter Freqency 6-24Ghz ")
-freq2 = "1000000000"
-freq4 = "000000000"
-message = input("What would you like to say ")
-base_ur = "http://10.42.0.10:5111/high_lo?freq="
-base_url = "http://10.42.0.10:511/low_lo?freq="
-freq3 = f"{freq1}{freq4}"
-url = f"{base_ur}{freq3}"
-u1l = f"{base_url}{freq2}"
-def text_to_morse(message):
-    morse = []
+sentence = input("Enter the sentence: ")
+freq = 1000
+uhd_args = "addr=192.168.10.2" 
+center_freq = 2.41e9 
+samp_rate = 1e7
+gain = 10
+usrp = uhd.usrp.MultiUSRP(uhd_args)
+transmission = 1
+usrp.set_tx_freq(center_freq)
+usrp.set_tx_rate(samp_rate)
+usrp.set_tx_gain(gain)
+usrp.set_tx_bandwidth(100, 0)
+
+
+dration = int(samp_rate * 0.1 * 2)
+duation = int(samp_rate * 0.3 * 2)
+
+def generate_morse_signal(text, samp_rate, freq):
+    morse_code = ""
     for char in text.upper():
         if char in MORSE_CODE_DICT:
-            morse.append(MORSE_CODE_DICT[char])
-    return ' '.join(morse)
-for symbol in morse_code:
+            morse_code += MORSE_CODE_DICT[char] + " "
+        elif char == ' ':
+            morse_code += "/ "
+        else:
+            print(f"Character '{char}' not found in Morse code dictionary.")
+            return None
+    signal = []
+    for symbol in morse_code:
+        pause_duration = int(samp_rate * 0.1)  
         if symbol == '.':
-            usrp.send_waveform(np.ones(int(tx_rate * 0.1)), tx_time)
+            duration = int(samp_rate * 0.1)
+            sine_wave = np.sin(2 * np.pi * freq * np.arange(duration) / samp_rate)
+            signal.extend(sine_wave)
+            signal.extend(np.zeros(pause_duration))  
+            print(f"Generated dot with length {len(sine_wave)} and pause with length {pause_duration}")
         elif symbol == '-':
-            usrp.send_waveform(np.ones(int(tx_rate * 0.3)), tx_time)
-        usrp.send_waveform(np.zeros(int(tx_rate * 0.1)), tx_time)
-if __name__ == "__main__":
-    text = "message"
-    morse_code = text_to_morse(text)
-    print(morse_code)
-with urllib.request.urlopen(url) as response:
-    ht4l = response.read().decode('utf-8')
-    print(ht4l)
-with urlib.request.urlopen(u1l) as response:
-    ht3l = response.read().decode('utf-8')
-    print(ht3l)
-  def transmit_morse(morse_code, tx_rate, tx_freq, tx_gain, tx_time):
-    usrp.set_tx_rate(1e6)
-    usrp.set_tx_freq(1e9)
-    usrp.set_tx_gain(-20)
-  
+            duation = int(samp_rate * 0.3 * 2)
+            sine_wave = np.sin(2 * np.pi * freq * np.arange(duation) / samp_rate)
+            signal.extend(sine_wave)
+            signal.extend(np.zeros(pause_duration))  
+            print(f"Generated dash with length {len(sine_wave)} and pause with length {pause_duration}")
+        elif symbol == ' ': 
+            pause = np.zeros(pause_duration * 3)
+            signal.extend(pause)  
+            print(f"Generated space with length {len(pause)}")
+        elif symbol == '/':
+            pause = np.zeros(pause_duration * 7)  
+            signal.extend(pause)  
+            print(f"Generated word space with length {len(pause)}")
+        return np.array(signal, dtype=np.complex64), morse_code
 
+def main():
+    print("Starting Morse code transmission...")
+    try:
+        morse_signal, morse_code = generate_morse_signal(sentence, samp_rate, freq)
+        if not morse_signal.any() or not morse_code:
+             return
+
+        dot_duration = 0.1 * 2
+        dash_duration = 0.3 * 2
+        letter_space_duration = dot_duration
+        word_space_duration = 7 * dot_duration
+
+        stream_args = uhd.stream_args_t("fc32", "out") 
+        tx_stream = usrp.get_tx_stream(stream_args)
+        chunk_size = tx_stream.get_max_num_samps()
+
+
+        symbol_index = 0
+        for i in range(0, len(morse_signal), chunk_size):
+            chunk = morse_signal[i:i + chunk_size]
+            tx_stream.send(chunk, uhd.stream_cmd_t.STREAM_NOW)
+
+            current_symbol = morse_code[symbol_index]
+
+            if current_symbol == '.':
+                time.sleep(dot_duration)
+            elif current_symbol == '-':
+                time.sleep(dash_duration)
+            elif current_symbol == ' ':
+                time.sleep(letter_space_duration)
+            elif current_symbol == '/':
+                time.sleep(word_space_duration)
+
+            symbol_index += 1  
+
+        print("Transmission complete.")
+
+    except RuntimeError as e:  
+        print(f"Error: {e}")
+
+if __name__ == "__main__":  
+    main()
