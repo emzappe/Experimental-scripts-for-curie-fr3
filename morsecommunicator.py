@@ -6,6 +6,8 @@ import numpy as np
 import uhd.usrp
 from uhd import types
 from uhd import usrp
+usrp = uhd.usrp.MultiUSRP() 
+
 
 MORSE_CODE_DICT = {
     'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
@@ -80,9 +82,10 @@ def main():
         letter_space_duration = dot_duration
         word_space_duration = 7 * dot_duration
 
-        stream_args = uhd.stream_args_t("fc32", "out") 
+        stream_args = uhd.stream_args_t("fc32", "0")
         tx_stream = usrp.get_tx_stream(stream_args)
         chunk_size = tx_stream.get_max_num_samps()
+
 
 
         symbol_index = 0
