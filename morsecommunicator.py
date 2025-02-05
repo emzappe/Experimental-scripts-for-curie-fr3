@@ -7,6 +7,14 @@ import uhd.usrp
 from uhd import types
 from uhd import usrp
 usrp = uhd.usrp.MultiUSRP() 
+freq1 = input("Enter Freqency 6-24ghz ")
+freq2 = "000000000"
+base_ur = "http://10.42.0.10:5111/high_lo?freq="
+u2l = f"{freq1}{freq2}"
+u1l = f"{base_ur}{freq2}"
+with urllib.request.urlopen(u1l) as response:
+   ht4l = response.read().decode('utf-8')
+   print(ht4l)
 
 
 MORSE_CODE_DICT = {
