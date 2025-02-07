@@ -44,17 +44,15 @@ usrp.set_tx_bandwidth(100, 0)
 
 
 
-def generate_morse_signal(text, samp_rate, freq):
-    morse_code = ""
-    for char in text.upper():
-        if char in MORSE_CODE_DICT:
-            morse_code += MORSE_CODE_DICT[char] + " "
-        elif char == ' ':
-            morse_code += "/ "
+def text_to_morse(text):
+    morse_sequence = ""
+    for char in text.upper():  # Handle uppercase and lowercase
+        if char in morse_code:
+            morse_sequence += morse_code[char] + " "  # Add space between characters
         else:
-            print(f"Character '{char}' not found in Morse code dictionary.")
-            return None
-    signal = []
+            print(f"Character '{char}' not found in Morse code dictionary.") #Handles unknown characters
+    return morse_sequence
+
 def generate_morse_signal(morse_sequence, sample_rate, tone_freq, dot_duration):
     samples = []
     for symbol in morse_sequence:
