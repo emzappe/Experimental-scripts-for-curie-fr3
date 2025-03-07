@@ -5,7 +5,7 @@ import numpy as np
 usrp = uhd.usrp.MultiUSRP("")  
 freq = 1e9  # 1 GHz
 samp_rate = 10e6 # 10 
-gain = 50 
+gain = 0
 usrp.set_rx_freq(freq)
 usrp.set_tx_freq(freq)
 usrp.set_rx_rate(samp_rate)
