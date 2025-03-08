@@ -13,31 +13,6 @@ usrp.set_tx_rate(samp_rate)
 usrp.set_rx_gain(gain)
 usrp.set_tx_gain(gain)
 
+t_end = time.time()
+while time.time() < t_end:
 
-pulse_duration = 1e-6  
-num_samps = int(pulse_duration * samp_rate)
-pulse = np.ones(num_samps, dtype=np.complex64)
-
-
-def measure_distance():
-    
-    tx_stream = usrp.get_tx_stream(uhd.stream_args("fc32"))
-    tx_stream.send(pulse, uhd.stream_metadata())
-
-    rx_stream = usrp.get_rx_stream(uhd.stream_args("fc32"))
-    rx_buffer = np.zeros(num_samps * 10, dtype=np.complex64) 
-    start_time = time.time()
-    rx_stream.recv(rx_buffer, uhd.stream_metadata())
-    end_time = time.time()
-
-    
-  
-    round_trip_time = end_time - start_time 
-
-  
-    speed_of_light = 299792458 
-    distance = (round_trip_time * speed_of_light) / 2 
-
-    return distance
-distance = measure_distance()
-print(f"Estimated distance: {distance:.2f} meters")
